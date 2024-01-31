@@ -48,11 +48,6 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
-
-    if message.content.startswith('!hello'):
-        await message.channel.send('Hello!')
-        await delete_message_after_delay(message, delay=5)
-
     elif message.content.startswith('!createrole'):
         args = message.content.split()[1:]
         role_name = args[0]
@@ -78,8 +73,23 @@ async def on_message(message):
 
     elif message.content.startswith('!editrole'):
         args = message.content.split()[1:]
+
+        
+        if len(args) < 1:
+            await message.channel.send("Please provide the role name for editing.")
+            return
+
         role_name = args[0]
+
+        
+        if len(args) < 2:
+            await message.channel.send(f"Please provide at least one permission to edit for the role {role_name}.")
+            return
+
         permissions = discord.Permissions()
+        color = None
+        position = None
+
         for perm in args[1:]:
             if perm.startswith("color="):
                 color = discord.Color(int(perm.split('=')[1][1:], 16)) if perm.split('=')[1].startswith('#') else None
@@ -93,10 +103,12 @@ async def on_message(message):
 
         guild = message.guild
         role = discord.utils.get(guild.roles, name=role_name)
+
         if role:
-            await role.edit(permissions=permissions, color=color if 'color' in locals() else None)
+            await role.edit(permissions=permissions, color=color)
             edited_message = await message.channel.send(f'Edited role {role_name} successfully.')
             await delete_message_after_delay(edited_message, delay=5)
+
             if position is not None:
                 roles = guild.roles
                 role_position = len(roles) - position
