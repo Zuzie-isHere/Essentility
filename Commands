@@ -1,0 +1,5 @@
+!ban nick reason
+!kick nick reason
+!createrole name permissions color top
+!editrole admin permissions(this edit the presetts of the bot)
+!purge 10 (number of messages you want to delete)
