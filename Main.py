@@ -1,3 +1,7 @@
+# Discord Bot Script
+# Author: Zuzie
+# Date: January 29, 2024 
+
 import os
 import discord
 import asyncio
