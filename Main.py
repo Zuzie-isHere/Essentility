@@ -1,6 +1,6 @@
 # Discord Bot Script
 # Author: Zuzie
-# Date: January 29, 2024 
+# Date: January 31, 2024 (added !Mute | !Unmute)
 
 import os
 import discord
@@ -48,6 +48,27 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
+
+    if message.content.startswith('!banlist'):
+        print("Executing !banlist block")
+        print(f"Message content: {message.content}")
+        if message.author.guild_permissions.ban_members:
+            bans = await message.guild.bans()
+
+            ban_list = []
+            async for ban_entry in bans:
+                ban_list.append(f"{ban_entry.user.name}: {ban_entry.reason or 'No reason provided'} ({ban_entry.created_at}) {ban_entry.user.id}")
+
+            if ban_list:
+                banlist_message = "Banned Users:\n"
+                banlist_message += "\n".join(ban_list)
+                await message.channel.send(banlist_message)
+            else:
+                await message.channel.send("The ban list is empty.")
+        else:
+            permission_message = await message.channel.send("You don't have permission to view the ban list.")
+            await delete_message_after_delay(permission_message, delay=5)
+  
     elif message.content.startswith('!createrole'):
         args = message.content.split()[1:]
         role_name = args[0]
@@ -74,14 +95,12 @@ async def on_message(message):
     elif message.content.startswith('!editrole'):
         args = message.content.split()[1:]
 
-        
         if len(args) < 1:
             await message.channel.send("Please provide the role name for editing.")
             return
 
         role_name = args[0]
 
-        
         if len(args) < 2:
             await message.channel.send(f"Please provide at least one permission to edit for the role {role_name}.")
             return
@@ -120,6 +139,8 @@ async def on_message(message):
         await delete_message_after_delay(message, delay=5)
 
     elif message.content.startswith('!ban'):
+        print("Executing !ban block")
+        print(f"Message content: {message.content}")
         if message.author.guild_permissions.ban_members:
             user_message = message.content.split(' ')
             if len(user_message) >= 3:
@@ -127,6 +148,7 @@ async def on_message(message):
                     user_to_ban = message.mentions[0]
                     reason = ' '.join(user_message[2:])
                     await message.guild.ban(user_to_ban, reason=reason)
+                    await user_to_ban.send(f'You have been banned from {message.guild.name} for the following reason: {reason}')
                     banned_message = await message.channel.send(f'{user_to_ban} has been banned for {reason}.')
                     await delete_message_after_delay(banned_message, delay=5)
                 else:
@@ -136,6 +158,7 @@ async def on_message(message):
                 if message.mentions:
                     user_to_ban = message.mentions[0]
                     await message.guild.ban(user_to_ban)
+                    await user_to_ban.send(f'You have been banned from {message.guild.name}.')
                     banned_message = await message.channel.send(f'{user_to_ban} has been banned.')
                     await delete_message_after_delay(banned_message, delay=5)
                 else:
@@ -154,6 +177,7 @@ async def on_message(message):
                 if message.mentions:
                     user_to_kick = message.mentions[0]
                     reason = ' '.join(user_message[2:])
+                    await user_to_kick.send(f'You have been kicked from {message.guild.name} for the following reason: {reason}')
                     await user_to_kick.kick(reason=reason)
                     kicked_message = await message.channel.send(f'{user_to_kick} has been kicked for {reason}.')
                     await delete_message_after_delay(kicked_message, delay=5)
@@ -186,15 +210,81 @@ async def on_message(message):
 
         await delete_message_after_delay(message, delay=5)
 
+    elif message.content.startswith('!mute'):
+        if message.author.guild_permissions.manage_roles:
+            if message.mentions:
+                member_to_mute = message.mentions[0]
+                muted_role = discord.utils.get(message.guild.roles, name="Muted")
+
+                if not muted_role:
+                    muted_role = await message.guild.create_role(name="Muted", permissions=discord.Permissions(send_messages=False))
+                    for channel in message.guild.channels:
+                        await channel.set_permissions(muted_role, send_messages=False)
+
+                await member_to_mute.add_roles(muted_role)
+                mute_message = await message.channel.send(f'{member_to_mute} has been muted.')
+                await delete_message_after_delay(mute_message, delay=5)
+            else:
+                mention_message = await message.channel.send("Please mention the user to mute.")
+                await delete_message_after_delay(mention_message, delay=5)
+        else:
+            permission_message = await message.channel.send("You don't have permission to manage roles.")
+            await delete_message_after_delay(permission_message, delay=5)
+
+        await delete_message_after_delay(message, delay=5)
+
+    elif message.content.startswith('!unmute'):
+        if message.author.guild_permissions.manage_roles:
+            if message.mentions:
+                member_to_unmute = message.mentions[0]
+                muted_role = discord.utils.get(message.guild.roles, name="Muted")
+
+                if muted_role in member_to_unmute.roles:
+                    await member_to_unmute.remove_roles(muted_role)
+                    unmute_message = await message.channel.send(f'{member_to_unmute} has been unmuted.')
+                    await delete_message_after_delay(unmute_message, delay=5)
+                else:
+                    unmute_message = await message.channel.send(f'{member_to_unmute} is not muted.')
+                    await delete_message_after_delay(unmute_message, delay=5)
+            else:
+                mention_message = await message.channel.send("Please mention the user to unmute.")
+                await delete_message_after_delay(mention_message, delay=5)
+        else:
+            permission_message = await message.channel.send("You don't have permission to manage roles.")
+            await delete_message_after_delay(permission_message, delay=5)
+
+        await delete_message_after_delay(message, delay=5)
+
+    elif message.content.startswith('!unban'):
+        if message.author.guild_permissions.ban_members:
+            user_message = message.content.split(' ')
+            if len(user_message) >= 2:
+                user_id = user_message[1]
+
+                try:
+                    user_to_unban = await client.fetch_user(user_id)
+                    await message.guild.unban(user_to_unban)
+                    unban_message = await message.channel.send(f'{user_to_unban} has been unbanned.')
+                    await delete_message_after_delay(unban_message, delay=5)
+                except discord.NotFound:
+                    not_found_message = await message.channel.send(f'User with ID {user_id} not found or not banned.')
+                    await delete_message_after_delay(not_found_message, delay=5)
+            else:
+                mention_message = await message.channel.send("Please provide the user ID to unban.")
+                await delete_message_after_delay(mention_message, delay=5)
+        else:
+            permission_message = await message.channel.send("You don't have permission to unban members.")
+            await delete_message_after_delay(permission_message, delay=5)
+
+        await delete_message_after_delay(message, delay=5)
+
 try:
-
-  token = "TOKEN!"
-  if token == "":
-      raise Exception("Please add your token.")
-  client.run(token)
+    token = "YOURTOKEN!"
+    if token == "":
+        raise Exception("Please add your token.")
+    client.run(token)
 except discord.HTTPException as e:
-  if e.status == 429:
-      raise e  
-
+    if e.status == 429:
+        raise e
 except Exception as ex:
-  print(f"An error occurred: {ex}")
+    print(f"An error occurred: {ex}")
