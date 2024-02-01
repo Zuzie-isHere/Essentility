@@ -2,6 +2,7 @@
 # Author: Zuzie
 # Date: January 31, 2024 (added !Mute | !Unmute)
 
+
 import os
 import discord
 import asyncio
@@ -40,11 +41,11 @@ async def delete_message_after_delay(message, delay):
         pass
 
 async def unmute_after_delay(member, muted_role, delay):
-  await asyncio.sleep(delay)
-  await member.remove_roles(muted_role)
-  unmute_message = await member.guild.get_channel(member.guild.system_channel.id).send(f'{member} has been unmuted after {delay} seconds.')
-  await delete_message_after_delay(unmute_message, delay=5)
-  
+    await asyncio.sleep(delay)
+    await member.remove_roles(muted_role)
+    unmute_message = await member.guild.get_channel(member.guild.system_channel.id).send(f'{member} has been unmuted after {delay} seconds.')
+    await delete_message_after_delay(unmute_message, delay=5)
+
 @client.event
 async def on_ready():
     await client.change_presence(activity=discord.Game(name="Dev BY zuzie"))
@@ -54,8 +55,9 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
+    lowercased_content = message.content.lower()
 
-    if message.content.startswith('!banlist'):
+    if lowercased_content.startswith('!banlist'):
         print("Executing !banlist block")
         print(f"Message content: {message.content}")
         if message.author.guild_permissions.ban_members:
@@ -74,8 +76,8 @@ async def on_message(message):
         else:
             permission_message = await message.channel.send("You don't have permission to view the ban list.")
             await delete_message_after_delay(permission_message, delay=5)
-  
-    elif message.content.startswith('!createrole'):
+
+    elif lowercased_content.startswith('!createrole'):
         args = message.content.split()[1:]
         role_name = args[0]
         preset = args[1] if len(args) > 1 else "usuarios"
@@ -98,7 +100,7 @@ async def on_message(message):
 
         await delete_message_after_delay(message, delay=5)
 
-    elif message.content.startswith('!editrole'):
+    elif lowercased_content.startswith('!editrole'):
         args = message.content.split()[1:]
 
         if len(args) < 1:
@@ -144,7 +146,7 @@ async def on_message(message):
 
         await delete_message_after_delay(message, delay=5)
 
-    elif message.content.startswith('!ban'):
+    elif lowercased_content.startswith('!ban'):
         print("Executing !ban block")
         print(f"Message content: {message.content}")
         if message.author.guild_permissions.ban_members:
@@ -176,7 +178,7 @@ async def on_message(message):
 
             await delete_message_after_delay(message, delay=5)
 
-    elif message.content.startswith('!kick'):
+    elif lowercased_content.startswith('!kick'):
         if message.author.guild_permissions.kick_members:
             user_message = message.content.split(' ')
             if len(user_message) >= 2:
@@ -199,7 +201,7 @@ async def on_message(message):
 
         await delete_message_after_delay(message, delay=5)
 
-    elif message.content.startswith('!purge'):
+    elif lowercased_content.startswith('!purge'):
         if message.author.guild_permissions.manage_messages:
             try:
                 amount = int(message.content.split(' ')[1])
@@ -216,7 +218,7 @@ async def on_message(message):
 
         await delete_message_after_delay(message, delay=5)
 
-    elif message.content.startswith('!mute'):
+    elif lowercased_content.startswith('!mute'):
         if message.author.guild_permissions.manage_roles:
             if message.mentions:
                 member_to_mute = message.mentions[0]
@@ -243,7 +245,7 @@ async def on_message(message):
 
         await delete_message_after_delay(message, delay=5)
 
-    elif message.content.startswith('!unmute'):
+    elif lowercased_content.startswith('!unmute'):
         if message.author.guild_permissions.manage_roles:
             if message.mentions:
                 member_to_unmute = message.mentions[0]
@@ -265,7 +267,7 @@ async def on_message(message):
 
         await delete_message_after_delay(message, delay=5)
 
-    elif message.content.startswith('!unban'):
+    elif lowercased_content.startswith('!unban'):
         if message.author.guild_permissions.ban_members:
             user_message = message.content.split(' ')
             if len(user_message) >= 2:
@@ -289,7 +291,7 @@ async def on_message(message):
         await delete_message_after_delay(message, delay=5)
 
 try:
-    token = "YOURTOKEN"
+    token = "YOUR_TOKEN_HERE HEHE"
     if token == "":
         raise Exception("Please add your token.")
     client.run(token)
@@ -298,4 +300,3 @@ except discord.HTTPException as e:
         raise e
 except Exception as ex:
     print(f"An error occurred: {ex}")
-
