@@ -1,3 +1,4 @@
+!help
 !ban nick reason
 !kick nick reason
 !banlist
