@@ -231,7 +231,6 @@ async def on_message(message):
                 mute_message = await message.channel.send(f'{member_to_mute} has been muted.')
                 await delete_message_after_delay(mute_message, delay=5)
 
-                # Obtén el tiempo de muteo (en segundos) desde el mensaje
                 mute_time = None
                 if len(message.content.split()) > 2 and message.content.split()[2].isdigit():
                     mute_time = int(message.content.split()[2])
