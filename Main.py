@@ -39,6 +39,12 @@ async def delete_message_after_delay(message, delay):
     except discord.errors.NotFound:
         pass
 
+async def unmute_after_delay(member, muted_role, delay):
+  await asyncio.sleep(delay)
+  await member.remove_roles(muted_role)
+  unmute_message = await member.guild.get_channel(member.guild.system_channel.id).send(f'{member} has been unmuted after {delay} seconds.')
+  await delete_message_after_delay(unmute_message, delay=5)
+  
 @client.event
 async def on_ready():
     await client.change_presence(activity=discord.Game(name="Dev BY zuzie"))
@@ -224,9 +230,14 @@ async def on_message(message):
                 await member_to_mute.add_roles(muted_role)
                 mute_message = await message.channel.send(f'{member_to_mute} has been muted.')
                 await delete_message_after_delay(mute_message, delay=5)
-            else:
-                mention_message = await message.channel.send("Please mention the user to mute.")
-                await delete_message_after_delay(mention_message, delay=5)
+
+                # Obtén el tiempo de muteo (en segundos) desde el mensaje
+                mute_time = None
+                if len(message.content.split()) > 2 and message.content.split()[2].isdigit():
+                    mute_time = int(message.content.split()[2])
+
+                if mute_time:
+                    asyncio.create_task(unmute_after_delay(member_to_mute, muted_role, mute_time))
         else:
             permission_message = await message.channel.send("You don't have permission to manage roles.")
             await delete_message_after_delay(permission_message, delay=5)
@@ -279,7 +290,7 @@ async def on_message(message):
         await delete_message_after_delay(message, delay=5)
 
 try:
-    token = "YOURTOKEN!"
+    token = "YOURTOKEN"
     if token == "":
         raise Exception("Please add your token.")
     client.run(token)
@@ -288,3 +299,4 @@ except discord.HTTPException as e:
         raise e
 except Exception as ex:
     print(f"An error occurred: {ex}")
+
